@@ -1,11 +1,15 @@
 package com.crewmeister.cmcodingchallenge.adapter;
 
-
 import jakarta.xml.bind.annotation.adapters.XmlAdapter;
-
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * An XmlJavaTypeAdapter to serialize a String date in yyyy-MM-dd format
+ * to {@link java.time.LocalDate} objects during JAXB parsing.
+ *
+ * @author payhez
+ */
 public class LocalDateAdapter extends XmlAdapter<String, LocalDate> {
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
