@@ -1,5 +1,6 @@
 package com.crewmeister.cmcodingchallenge.controller;
 
+import com.crewmeister.cmcodingchallenge.exception.InvalidDateException;
 import com.crewmeister.cmcodingchallenge.service.CurrencyExchangeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -8,11 +9,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static com.crewmeister.cmcodingchallenge.util.Utils.parseAndValidateDate;
 
 @RestController
 @RequestMapping("/api")
@@ -33,18 +35,13 @@ public class CurrencyExchangeController {
 
     @GetMapping("/exchange-rates/{date}")
     public ResponseEntity<?> getRatesByDate(@PathVariable String date) {
-        LocalDate requestedDate ;
         try {
-            requestedDate = LocalDate.parse(date);
-        } catch (DateTimeParseException e) {
-            return ResponseEntity.badRequest().body("The date format is wrong! It should be yyyy-MM-dd");
+            LocalDate requestedDate = parseAndValidateDate(date);
+            Map<String, BigDecimal> rates = currencyExchangeService.getRatesForDate(requestedDate);
+            return rates != null ? ResponseEntity.ok(rates) : ResponseEntity.notFound().build();
+        } catch (InvalidDateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-
-        Map<String, BigDecimal> rates = currencyExchangeService.getRatesForDate(requestedDate);
-        if (rates == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(rates);
     }
 
    @GetMapping("/convert")
@@ -52,18 +49,11 @@ public class CurrencyExchangeController {
            @RequestParam String currency,
            @RequestParam BigDecimal amount,
            @RequestParam String date) {
-        if(!currencyExchangeService.getAvailableCurrencies().contains(currency)) {
+        if (!currencyExchangeService.getAvailableCurrencies().contains(currency)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("The requested currency does not exist!");
         }
-
-        LocalDate requestedDate ;
         try {
-            requestedDate = LocalDate.parse(date);
-        } catch (DateTimeParseException e) {
-            return ResponseEntity.badRequest().body("The date format is wrong! It should be yyyy-MM-dd");
-        }
-
-        try {
+            LocalDate requestedDate = parseAndValidateDate(date);
             BigDecimal euroAmount = currencyExchangeService.convertToEuro(currency, amount, requestedDate);
             Map<String, Object> response = new HashMap<>();
             response.put("currency", currency);
@@ -74,6 +64,8 @@ public class CurrencyExchangeController {
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+        } catch (InvalidDateException e) {
+           return ResponseEntity.badRequest().body(e.getMessage());
+       }
    }
 }
