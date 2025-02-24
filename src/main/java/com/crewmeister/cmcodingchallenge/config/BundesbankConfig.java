@@ -4,12 +4,12 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 @Data
 @Configuration
-@ConfigurationProperties(prefix = "bundesbank.api")
-public class BundesbankApiConfig {
-    private Map<String, String> urls = new HashMap<>();
+@ConfigurationProperties(prefix = "spring.bundesbank")
+public class BundesbankConfig {
+    private String urlTemplate;
+    private List<String> currencies;
 }

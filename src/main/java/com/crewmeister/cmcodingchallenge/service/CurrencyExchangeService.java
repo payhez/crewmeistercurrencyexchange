@@ -1,6 +1,6 @@
 package com.crewmeister.cmcodingchallenge.service;
 
-import com.crewmeister.cmcodingchallenge.config.BundesbankApiConfig;
+import com.crewmeister.cmcodingchallenge.config.BundesbankConfig;
 import com.crewmeister.cmcodingchallenge.jaxb.model.CompactData;
 import com.crewmeister.cmcodingchallenge.jaxb.model.DataSet;
 import com.crewmeister.cmcodingchallenge.jaxb.model.DateRate;
@@ -9,6 +9,7 @@ import com.crewmeister.cmcodingchallenge.jaxb.model.Currency;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -25,9 +26,10 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@EnableScheduling
 public class CurrencyExchangeService {
 
-    private final BundesbankApiConfig apiConfig;
+    private final BundesbankConfig apiConfig;
     private final RestTemplate restTemplate;
 
     /**
@@ -62,14 +64,20 @@ public class CurrencyExchangeService {
 
     @Scheduled(cron = "0 0 * * * *") // Every hour
     public void updateData() {
-        if (CollectionUtils.isEmpty(apiConfig.getUrls())) {
-            log.warn("There is no url(s) configured to retrieve data!");
+        if (CollectionUtils.isEmpty(apiConfig.getCurrencies())) {
+            log.warn("No currency is available for request!");
             return;
         }
 
-        apiConfig.getUrls().forEach((currencyCode, url) -> {
+        String urlTemplate = apiConfig.getUrlTemplate();
+
+        apiConfig.getCurrencies().forEach(currencyCode -> {
             try {
-                CompactData response = restTemplate.getForObject(url, CompactData.class);
+                CompactData response = restTemplate.getForObject(
+                        urlTemplate,
+                        CompactData.class,
+                        Map.of("currency", currencyCode)
+                );
                 loadDataToCache(response);
             } catch (RestClientException e) {
                 log.error("Error occurred while sending request", e);

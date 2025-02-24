@@ -13,7 +13,7 @@ class CmCodingChallengeApplicationTests {
 
 	@Test
 	void contextLoads() {
-		service.downloadFile();
+		service.updateData();
 	}
 
 }
