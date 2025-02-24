@@ -65,10 +65,15 @@ public class CurrencyExchangeService {
      */
     @PostConstruct
     public void initialize() {
+        if (apiConfig == null) {
+            System.err.println("Configuration is invalid.");
+            log.error("Configuration is invalid.");
+            System.exit(0);
+        }
         updateData();
     }
 
-    @Scheduled(cron = "0 0 * * * *") // Every hour
+    @Scheduled(cron = "0 0 * * * *") // Once in every hour
     public void updateData() {
         if (CollectionUtils.isEmpty(apiConfig.getCurrencies())) {
             log.warn("No currency is available for request!");
@@ -112,7 +117,7 @@ public class CurrencyExchangeService {
                                     .put(currencyCode, dateRate.getExchangeRate());
                         }
                     }
-                    System.out.println("Loading of " + currencyCode + "is completed!");
+                    System.out.println("Loading of " + currencyCode + " is completed!");
                 }
             }
         }
