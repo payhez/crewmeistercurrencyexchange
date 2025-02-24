@@ -1,6 +1,7 @@
-package com.crewmeister.cmcodingchallenge.model.jaxb;
+package com.crewmeister.cmcodingchallenge.jaxb.model;
 
-import jakarta.xml.bind.annotation.*;
+import javax.xml.bind.annotation.*;
+
 import lombok.Getter;
 
 import java.util.List;
@@ -12,6 +13,6 @@ public class Currency {
     @XmlAttribute(name = "UNIT")
     private String currencyCode;
 
-    @XmlElement(name = "Obs")
+    @XmlElement(name = "Obs", namespace = "http://www.bundesbank.de/statistik/zeitreihen/BBKcompact")
     private List<DateRate> dateRates;
 }

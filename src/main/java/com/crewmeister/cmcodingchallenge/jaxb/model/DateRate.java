@@ -1,11 +1,11 @@
-package com.crewmeister.cmcodingchallenge.model.jaxb;
+package com.crewmeister.cmcodingchallenge.jaxb.model;
 
-import com.crewmeister.cmcodingchallenge.adapter.LocalDateAdapter;
-import jakarta.xml.bind.annotation.XmlAccessType;
-import jakarta.xml.bind.annotation.XmlAccessorType;
-import jakarta.xml.bind.annotation.XmlAttribute;
-import jakarta.xml.bind.annotation.XmlType;
-import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import com.crewmeister.cmcodingchallenge.jaxb.adapter.LocalDateAdapter;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;

@@ -1,6 +1,6 @@
-package com.crewmeister.cmcodingchallenge.adapter;
+package com.crewmeister.cmcodingchallenge.jaxb.adapter;
 
-import jakarta.xml.bind.annotation.adapters.XmlAdapter;
+import javax.xml.bind.annotation.adapters.XmlAdapter;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 

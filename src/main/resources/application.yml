@@ -1,0 +1,5 @@
+bundesbank:
+  api:
+    urls:
+      AUD: https://www.bundesbank.de/statistic-rmi/StatisticDownload?tsId=BBEX3.D.AUD.EUR.BB.AC.000&mode=its&its_fileFormat=sdmx&its_csvFormat=en&its_currency=hypothetical&its_dateFormat=dateOfDay
+      BGN: https://www.bundesbank.de/statistic-rmi/StatisticDownload?tsId=BBEX3.D.BGN.EUR.BB.AC.000&mode=its&its_fileFormat=sdmx&its_csvFormat=&its_currency=&its_dateFormat=default
