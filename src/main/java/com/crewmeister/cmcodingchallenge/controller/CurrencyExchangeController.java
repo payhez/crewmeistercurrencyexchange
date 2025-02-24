@@ -2,7 +2,6 @@ package com.crewmeister.cmcodingchallenge.controller;
 
 import com.crewmeister.cmcodingchallenge.service.CurrencyExchangeService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -48,23 +47,32 @@ public class CurrencyExchangeController {
     }
 
    @GetMapping("/convert")
-   public ResponseEntity<Map<String, Object>> convertToEuro(
+   public ResponseEntity<?> convertToEuro(
            @RequestParam String currency,
            @RequestParam BigDecimal amount,
            @RequestParam String date) {
+        if(!currencyExchangeService.getAvailableCurrencies().contains(currency)) {
+            return ResponseEntity.badRequest().body("The requested currency does not exist!");
+        }
 
-       LocalDate requestedDate = LocalDate.parse(date);
-       try {
-           BigDecimal euroAmount = currencyExchangeService.convertToEuro(currency, amount, requestedDate);
-           Map<String, Object> response = new HashMap<>();
-           response.put("currency", currency);
-           response.put("originalAmount", amount);
-           response.put("requestedDate", requestedDate.toString());
-           response.put("usedRateDate", currencyExchangeService.findLastValidDate(requestedDate).toString());
-           response.put("convertedToEuro", euroAmount);
-           return ResponseEntity.ok(response);
-       } catch (IllegalArgumentException e) {
-           return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-       }
+        LocalDate requestedDate ;
+        try {
+            requestedDate = LocalDate.parse(date);
+        } catch (DateTimeParseException e) {
+            return ResponseEntity.badRequest().body("The date format is wrong! It should be yyyy-MM-dd");
+        }
+
+        try {
+            BigDecimal euroAmount = currencyExchangeService.convertToEuro(currency, amount, requestedDate);
+            Map<String, Object> response = new HashMap<>();
+            response.put("currency", currency);
+            response.put("originalAmount", amount);
+            response.put("requestedDate", requestedDate.toString());
+            response.put("usedRateDate", currencyExchangeService.findLastValidDate(requestedDate).toString());
+            response.put("convertedToEuro", euroAmount);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
    }
 }
