@@ -1,0 +1,7 @@
+spring:
+  bundesbank:
+    url-template: "http://example.com/api/getData?Id=BBEX3.D.{currency}.EUR.BB.AC.000"
+    currencies:
+      - AUD
+      - TRY
+      - USD
