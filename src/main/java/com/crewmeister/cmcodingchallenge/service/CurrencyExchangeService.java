@@ -4,29 +4,20 @@ import com.crewmeister.cmcodingchallenge.config.BundesbankApiConfig;
 import com.crewmeister.cmcodingchallenge.jaxb.model.CompactData;
 import com.crewmeister.cmcodingchallenge.jaxb.model.DataSet;
 import com.crewmeister.cmcodingchallenge.jaxb.model.DateRate;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-
 import com.crewmeister.cmcodingchallenge.jaxb.model.Currency;
+
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,12 +28,16 @@ import java.util.stream.Collectors;
 public class CurrencyExchangeService {
 
     private final BundesbankApiConfig apiConfig;
-
-    @Autowired
     private final RestTemplate restTemplate;
 
     /**
-     * A cache of historical exchange rate data loaded from the XML files that contains exchange rate data.
+     * A cache of all available currencies.
+     */
+    @Getter
+    private final Set<String> availableCurrencies = new HashSet<>();
+
+    /**
+     * A cache of historical exchange rate data.
      *
      * <p>This map stores exchange rates keyed by date. Each key is a {@link LocalDate}
      * representing the observation date, and its corresponding value is another map where:
@@ -55,63 +50,39 @@ public class CurrencyExchangeService {
      */
     private final Map<LocalDate, Map<String, BigDecimal>> rateData = new HashMap<>();
 
-    @Getter
-    private final Set<String> availableCurrencies = new HashSet<>();
 
     /**
-     * Initializes the exchange rate data by parsing the XML file.
-     *
+     * Initializes the exchange rate data by calling {@link #updateData()} method to load real time data from Bundesbank.
      * <p>This method is executed automatically after the bean is constructed (via the {@code @PostConstruct} annotation).
-     * It loads the XML file (assumed to be located in the classpath as {@code exchange-rates.xml}) and uses JAXB to unmarshal
-     * its content into a {@link DataSet} object.
-     *
-     * @throws RuntimeException if there is an error parsing the XML file.
      */
     @PostConstruct
     public void initialize() {
-        try {
-            URL dirURL = getClass().getResource("/expired-currencies");
-            if (dirURL != null && dirURL.getProtocol().equals("file")) {
-                File folder = new File(dirURL.toURI());
-                for (File file : Objects.requireNonNull(folder.listFiles())) {
-                    parseDataFile(file, getUnmarshaller());
-                }
-            }
-        } catch (URISyntaxException e) {
-            log.error("Directory format is not correct.", e);
-        }
         updateData();
     }
 
-    @Scheduled(cron = "0 0 0 * * *") // Runs every day at midnight
-    public void downloadFileDaily() {
-        downloadFile();
-    }
+    @Scheduled(cron = "0 0 * * * *") // Every hour
+    public void updateData() {
+        if (CollectionUtils.isEmpty(apiConfig.getUrls())) {
+            log.warn("There is no url(s) configured to retrieve data!");
+            return;
+        }
 
-    public void downloadFile() {
         apiConfig.getUrls().forEach((currencyCode, url) -> {
             try {
                 CompactData response = restTemplate.getForObject(url, CompactData.class);
-                System.out.println("dc");
+                loadDataToCache(response);
+            } catch (RestClientException e) {
+                log.error("Error occurred while sending request", e);
             } catch (Exception e) {
-                // Handle exceptions appropriately
+                log.error("Data update failed due to", e);
             }
         });
     }
 
-    private void parseDataFile(final File file, final Unmarshaller unmarshaller) {
-        InputStream is;
-        CompactData compactData = null;
-        try {
-            is = new FileInputStream(file);
-            compactData = (CompactData) unmarshaller.unmarshal(is);
-        } catch (FileNotFoundException e) {
-            log.error("File({}) is not found", file.getName(), e);
-            return;
-        } catch (JAXBException e) {
-            log.error("JAXB Exception occurred possibly due to invalid XML structure. File: {}", file.getName(), e);
-            return;
-        }
+    /**
+     * Loads the {@link DataSet} of a given {@link CompactData} to both {@link #rateData} and {@link #availableCurrencies}.
+     */
+    private void loadDataToCache(final CompactData compactData) {
         if (compactData != null && compactData.getDataSet() != null) {
             DataSet dataSet = compactData.getDataSet();
             if (dataSet.getCurrencies() != null) {
@@ -131,51 +102,15 @@ public class CurrencyExchangeService {
         }
     }
 
-    private Unmarshaller getUnmarshaller(){
-        try {
-            JAXBContext jaxbContext = JAXBContext.newInstance(CompactData.class);
-            return jaxbContext.createUnmarshaller();
-        } catch (JAXBException e) {
-            log.error("JAXB context could not be loaded!", e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void updateData() {
-        //try {
-        //    //InputStream is = new FileInputStream(properties.getFileUrl());
-        //    URL dirURL = getClass().getResource("/expired-currencies");
-        //    InputStream is = getClass().getResourceAsStream("/exchange-rates.xml");
-        //    JAXBContext context = JAXBContext.newInstance(DataSet.class);
-        //    Unmarshaller unmarshaller = context.createUnmarshaller();
-        //    DataSet dataSet = (DataSet) unmarshaller.unmarshal(is);
-//
-        //    for (Currency currency : dataSet.getCurrencies()) {
-        //        String currencyCode = currency.getCurrencyCode();
-        //        if (currencyCode != null && !currencyCode.isEmpty()) {
-        //            availableCurrencies.add(currencyCode);
-        //        }
-        //        for (DateRate dateRate : currency.getDateRates()) {
-        //            if (dateRate.isValid()) {
-        //                rateData.computeIfAbsent(dateRate.getDate(), d -> new HashMap<>())
-        //                        .put(currencyCode, dateRate.getExchangeRate());
-        //            }
-        //        }
-        //    }
-        //} catch (JAXBException e) {
-        //    throw new RuntimeException("Error parsing XML file", e);
-        //}
-    }
-
     public List<Map<String, Object>> getAllExchangeRates() {
-    return  rateData.entrySet().stream()
-    .map(e -> {
-        Map<String, Object> map = new HashMap<>();
-        map.put("date", e.getKey());
-        map.put("rates", e.getValue());
-        return map;
-    })
-    .collect(Collectors.toList());
+        return  rateData.entrySet().stream()
+            .map(e -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("date", e.getKey());
+                map.put("rates", e.getValue());
+                return map;
+            })
+            .collect(Collectors.toList());
     }
 
     public Map<String, BigDecimal> getRatesForDate(final LocalDate date) {
