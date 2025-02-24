@@ -73,6 +73,7 @@ public class CurrencyExchangeService {
 
         apiConfig.getCurrencies().forEach(currencyCode -> {
             try {
+                System.out.println("Data for "+ currencyCode +" is loading..." );
                 CompactData response = restTemplate.getForObject(
                         urlTemplate,
                         CompactData.class,
@@ -105,6 +106,7 @@ public class CurrencyExchangeService {
                                     .put(currencyCode, dateRate.getExchangeRate());
                         }
                     }
+                    System.out.println("Loading of " + currencyCode + "is completed!");
                 }
             }
         }
