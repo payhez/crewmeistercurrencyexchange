@@ -1,12 +1,11 @@
 package com.crewmeister.cmcodingchallenge.jaxb.model;
 
+import lombok.Data;
+
 import javax.xml.bind.annotation.*;
-
-import lombok.Getter;
-
 import java.util.List;
 
-@Getter
+@Data
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "Series")
 public class Currency {

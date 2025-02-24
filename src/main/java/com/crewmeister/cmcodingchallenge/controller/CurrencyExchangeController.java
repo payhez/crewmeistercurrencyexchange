@@ -2,6 +2,7 @@ package com.crewmeister.cmcodingchallenge.controller;
 
 import com.crewmeister.cmcodingchallenge.service.CurrencyExchangeService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -52,7 +53,7 @@ public class CurrencyExchangeController {
            @RequestParam BigDecimal amount,
            @RequestParam String date) {
         if(!currencyExchangeService.getAvailableCurrencies().contains(currency)) {
-            return ResponseEntity.badRequest().body("The requested currency does not exist!");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("The requested currency does not exist!");
         }
 
         LocalDate requestedDate ;
