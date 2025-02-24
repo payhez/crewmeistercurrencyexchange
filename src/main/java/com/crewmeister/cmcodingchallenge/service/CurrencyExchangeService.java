@@ -52,6 +52,12 @@ public class CurrencyExchangeService {
      */
     private final Map<LocalDate, Map<String, BigDecimal>> rateData = new HashMap<>();
 
+    /**
+     * The max number of days to go back to in case the exchange rate data is not found on a given date. The assumption
+     * is the max number of holidays would be 14.
+     */
+    private static final int MAX_NUMBER_OF_FALLBACK_DAYS = 14;
+
 
     /**
      * Initializes the exchange rate data by calling {@link #updateData()} method to load real time data from Bundesbank.
@@ -132,8 +138,12 @@ public class CurrencyExchangeService {
    // Helper method to get the closest prior date with valid data.
     public LocalDate findLastValidDate(final LocalDate requestedDate) {
         LocalDate date = requestedDate;
-        while (date != null && !rateData.containsKey(date)) {
+        int numberOfDaysThatFallenBack = 0;
+        while (date != null
+                && !rateData.containsKey(date)
+                && numberOfDaysThatFallenBack < MAX_NUMBER_OF_FALLBACK_DAYS) {
             date = date.minusDays(1);
+            numberOfDaysThatFallenBack++;
         }
         return date;
     }
